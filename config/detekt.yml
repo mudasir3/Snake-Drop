@@ -4,21 +4,28 @@ build:
 complexity:
   LongMethod:
     threshold: 40
+    ignoreAnnotated: ['Composable']
   LongParameterList:
     functionThreshold: 8
     constructorThreshold: 10
   CyclomaticComplexMethod:
     threshold: 15
+    ignoreAnnotated: ['Composable']
   TooManyFunctions:
     active: false
   NestedBlockDepth:
     threshold: 5
+
+naming:
+  FunctionNaming:
+    ignoreAnnotated: ['Composable']
 
 style:
   MagicNumber:
     active: true
     ignoreNumbers: ['-1', '0', '1', '2', '3', '4']
     ignorePropertyDeclaration: true
+    ignoreAnnotated: ['Composable']
     ignoreConstantDeclaration: true
     ignoreCompanionObjectPropertyDeclaration: true
     excludes: ['**/test/**', '**/androidTest/**']
