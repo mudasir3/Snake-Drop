@@ -3,14 +3,9 @@ package com.snakedrop.app
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -46,21 +41,5 @@ internal fun ArcadeButton(
     val styled = if (primary) base.background(Palette.Accent) else base.border(2.dp, Palette.AccentAlt)
     Box(styled, contentAlignment = Alignment.Center) {
         ArcadeText(label, 14, if (primary) Palette.Ink else Palette.AccentAlt)
-    }
-}
-
-@Composable
-fun HomeScreen(
-    best: Int,
-    onPlay: () -> Unit,
-) {
-    Column(
-        Modifier.fillMaxSize().background(Palette.Ink).statusBarsPadding().padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
-    ) {
-        ArcadeText("SNAKE", 40, Palette.Snake)
-        ArcadeText("DROP", 40, Palette.Apple)
-        ArcadeText("BEST  $best", 14, Palette.TextDim)
-        ArcadeButton("PLAY", onClick = onPlay)
     }
 }

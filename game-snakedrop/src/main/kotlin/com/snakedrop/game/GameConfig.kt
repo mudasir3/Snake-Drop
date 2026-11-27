@@ -33,6 +33,8 @@ public data class GameConfig(
     /** PRD 7: first 3 runs are ad-free. */
     val interstitialFreeRuns: Int = 3,
     val adsEnabled: Boolean = true,
+    /** Rows of random rubble in the well at run start (difficulty/levels). 0..4. */
+    val startRubbleRows: Int = 0,
 ) {
     /** Microseconds for one chunk fall step, given apples eaten so far. */
     public fun chunkFallUs(applesEaten: Int): Int = (if (applesEaten >= fastFallAfterApples) chunkFallMsFast else chunkFallMs) * US_PER_MS

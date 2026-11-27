@@ -10,6 +10,8 @@ import com.snakedrop.game.GameConstants.TICK_US
  * [queueTurn] calls between [step] calls always produce the same state.
  */
 public object SnakeDropEngine {
+    private const val MAX_GARBAGE_BATCH = 8
+
     /** Creates a fresh run: snake placed, first apple spawned from [seed]. */
     public fun newRun(
         seed: Long,
@@ -17,6 +19,7 @@ public object SnakeDropEngine {
     ): GameState {
         val s = GameState(seed, config)
         SnakeRules.placeStartSnake(s)
+        WellRules.addRubble(s, config.startRubbleRows)
         RunControl.spawnApple(s)
         return s
     }
@@ -40,6 +43,27 @@ public object SnakeDropEngine {
         ArenaRules.tick(s)
         if (s.phase != Phase.RUNNING) return
         SnakeRules.tick(s)
+    }
+
+    /** Queues [rows] garbage rows to land when the next chunk locks. Versus mode only. */
+    public fun receiveGarbage(
+        s: GameState,
+        rows: Int,
+    ) {
+        if (s.phase == Phase.ENDED || s.phase == Phase.WON) return
+        s.incomingGarbage += rows.coerceIn(0, MAX_GARBAGE_BATCH)
+    }
+
+    /** Returns the garbage rows earned since the last call and resets the counter. */
+    public fun takeOutgoingGarbage(s: GameState): Int {
+        val n = s.outgoingGarbage
+        s.outgoingGarbage = 0
+        return n
+    }
+
+    /** Marks a level run as won. Only valid while running. */
+    public fun win(s: GameState) {
+        if (s.phase == Phase.RUNNING) s.phase = Phase.WON
     }
 
     /** Pauses a running run. */

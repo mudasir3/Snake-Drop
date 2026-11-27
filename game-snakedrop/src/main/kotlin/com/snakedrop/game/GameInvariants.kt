@@ -44,7 +44,7 @@ public object GameInvariants {
             var filled = 0
             for (c in 0 until WIDTH) {
                 val v = s.well[Grid.idx(r, c)]
-                if (v < 0 || v > GameConstants.CHUNK_COLORS) return "bad well value $v"
+                if (v < 0 || v > GameConstants.GARBAGE_COLOR) return "bad well value $v"
                 if (v != 0) filled++
             }
             if (filled == WIDTH) return "full well row $r left uncleared"

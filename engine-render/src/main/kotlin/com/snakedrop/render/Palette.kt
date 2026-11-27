@@ -16,7 +16,7 @@ object Palette {
     val Accent = Color(0xFFB6FF3B)
     val AccentAlt = Color(0xFF25D9FF)
 
-    /** Chunk colors, indexed by color id 1..6 (index 0 unused). */
+    /** Well colors, indexed by id 1..6 (chunks) and 7 (garbage); index 0 unused. */
     val Chunks =
         arrayOf(
             Color.Transparent,

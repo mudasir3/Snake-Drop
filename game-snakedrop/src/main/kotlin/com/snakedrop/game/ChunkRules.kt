@@ -92,8 +92,9 @@ internal object ChunkRules {
         s.chunkActive = false
         s.score += CHUNK_CELL_POINTS * CHUNK_LEN
         s.events.add(Ev.CHUNK_LANDED, CHUNK_LEN)
-        WellRules.clearFullRows(s)
+        val cleared = WellRules.clearFullRows(s)
         WellRules.refreshHeight(s)
+        WellRules.exchangeGarbage(s, cleared)
         ArenaRules.onWellChanged(s)
         spawnPending(s)
     }

@@ -28,6 +28,9 @@ public object Ev {
 
     /** Run continued after a revive. */
     public const val REVIVED: Int = 9
+
+    /** a = garbage rows added to this well. */
+    public const val GARBAGE_RECEIVED: Int = 10
 }
 
 /** Preallocated event queue. Drop-on-full; the host drains it every frame. */

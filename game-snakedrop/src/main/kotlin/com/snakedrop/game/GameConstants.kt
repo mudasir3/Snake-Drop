@@ -29,6 +29,12 @@ public object GameConstants {
     /** Snake speed accumulator threshold: one move each time it reaches this (speed is stored x100). */
     public const val MOVE_THRESHOLD: Int = SIM_HZ * 100
 
+    /** Well value used for garbage rows received in versus mode (not a chunk color). */
+    public const val GARBAGE_COLOR: Int = 7
+
+    /** Garbage rows sent for a 4-row clear. */
+    public const val QUAD_GARBAGE: Int = 4
+
     /** Number of distinct chunk colors. */
     public const val CHUNK_COLORS: Int = 6
 
@@ -86,4 +92,4 @@ public object Cell {
 public enum class EndCause { NONE, WALL, SELF, CRUSHED, NO_SPAWN, NO_SPACE }
 
 /** Run phase. */
-public enum class Phase { RUNNING, PAUSED, ENDED }
+public enum class Phase { RUNNING, PAUSED, ENDED, WON }

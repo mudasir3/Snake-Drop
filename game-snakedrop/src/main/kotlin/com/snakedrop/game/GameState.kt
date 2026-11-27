@@ -73,6 +73,14 @@ public class GameState internal constructor(
     public var chunksLanded: Int = 0
         internal set
 
+    /** Garbage rows waiting to be added to this well when the next chunk locks (versus mode). */
+    public var incomingGarbage: Int = 0
+        internal set
+
+    /** Garbage rows this player earned that the host has not yet sent to the opponent. */
+    public var outgoingGarbage: Int = 0
+        internal set
+
     /** Height of the locked stack, 0..9. */
     public var wellHeight: Int = 0
         internal set

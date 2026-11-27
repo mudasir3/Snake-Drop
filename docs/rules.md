@@ -55,3 +55,10 @@
 - **Remote Config defaults:** Ship in-app defaults equal to PRD values. The game must work fully offline with defaults.
 - **Test seeds:** Pin seeds in every test. Never write a test that depends on wall-clock or real randomness.
 - **Trademarks:** Never use "Nokia", "Tetris", "Snake" as a brand name, or any look-alike art/sound in the store listing, UI, or code identifiers exposed to users.
+
+# Modes (added after v1.0 PRD)
+- **Difficulty:** `Difficulty.SMALL/MEDIUM/HARD` presets in `Difficulty.kt`. MEDIUM equals PRD defaults. HARD adds 2 starting rubble rows and an earlier arena shrink.
+- **Rubble:** Each rubble row has one 4-wide gap so one straight chunk can clear it.
+- **Levels:** 12 goal levels in `Levels.kt` (APPLES, CHUNKS, ROWS, SCORE). Unlock needs 1+ star on the previous level. Par times and score targets are untuned.
+- **Replay:** `RecordedRun` records accepted turns; `ReplayPlayer.verify` re-simulates to check a claimed score. Never trust a client score without it.
+- **Versus:** Same seed per player. Clearing 2/3/4 rows sends 1/2/4 garbage rows; garbage cancels incoming first and lands when the next chunk locks. A stack overflow ends the run. Opponent link is the `MatchTransport` interface.
