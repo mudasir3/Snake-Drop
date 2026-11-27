@@ -1,4 +1,4 @@
-@file:Suppress("MaxLineLength")
+@file:Suppress("MaxLineLength", "MagicNumber", "LongParameterList")
 
 package com.snakedrop.app
 
@@ -27,7 +27,9 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import com.snakedrop.engine.core.FixedStepAccumulator
 import com.snakedrop.game.Dir
@@ -54,12 +56,14 @@ class SessionResult(
 
 @Composable
 fun GameScreen(
-    mode: GameMode,
+    session: Session,
     onFinished: (SessionResult) -> Unit,
     onQuit: () -> Unit,
 ) {
-    val session = remember(mode) { Session(mode) }
     val acc = remember(session) { FixedStepAccumulator(NANOS_PER_SEC / SIM_HZ) }
+    val juice = remember(session) { Juice() }
+    val metrics = remember(session) { BoardMetrics() }
+    val haptic = LocalHapticFeedback.current
     var frame by remember { mutableLongStateOf(0L) }
     var score by remember(session) { mutableIntStateOf(0) }
     var goal by remember(session) { mutableIntStateOf(0) }
@@ -73,6 +77,9 @@ fun GameScreen(
                 val dt = if (last == 0L) 0L else now - last
                 last = now
                 if (session.outcome() == Outcome.PLAYING && !paused) repeat(acc.consume(dt)) { session.step() }
+                juice.consume(session, metrics, haptic)
+                juice.trackChunk(session)
+                juice.update(dt / NANOS_PER_SEC.toFloat())
                 val s = session.state
                 if (s.score != score) score = s.score
                 val m = session.mode
@@ -88,7 +95,7 @@ fun GameScreen(
         }
     }
 
-    Column(Modifier.fillMaxSize().background(Palette.Ink).statusBarsPadding().padding(12.dp)) {
+    Column(Modifier.fillMaxSize().statusBarsPadding().padding(12.dp)) {
         Hud(session, score, goal, paused, onPause = { paused = !paused }, onQuit = onQuit)
         Box(Modifier.fillMaxSize().padding(top = 8.dp)) {
             Column(Modifier.fillMaxSize()) {
@@ -103,7 +110,17 @@ fun GameScreen(
                     Modifier.fillMaxWidth().weight(1f).pointerInput(session) { swipeInput(session) },
                 ) {
                     val cell = minOf(size.width / WIDTH, size.height / BOARD_ROWS)
-                    drawBoard(session.state, cell, Offset((size.width - cell * WIDTH) / 2f, 0f), frame / NANOS_PER_MS)
+                    val origin = Offset((size.width - cell * WIDTH) / 2f, 0f)
+                    metrics.cell = cell
+                    metrics.originX = origin.x
+                    metrics.originY = origin.y
+                    val nowMs = frame / NANOS_PER_MS
+                    translate(juice.shakeOffset(), juice.shakeOffset()) {
+                        drawBoard(session.state, cell, origin, nowMs)
+                        juice.particles.draw(this)
+                    }
+                    drawDangerVignette(session.state.shrinkWarnUs > 0, nowMs)
+                    if (juice.flash > 0.01f) drawRect(juice.flashColor.copy(alpha = juice.flash.coerceAtMost(0.5f)))
                 }
             }
             if (paused) {
@@ -170,4 +187,19 @@ private suspend fun androidx.compose.ui.input.pointer.PointerInputScope.swipeInp
             dy = 0f
         }
     }
+}
+
+/** Pulsing red frame while the arena is about to shrink. */
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawDangerVignette(
+    active: Boolean,
+    nowMs: Long,
+) {
+    if (!active) return
+    val a = 0.18f + 0.2f * (0.5f + 0.5f * kotlin.math.sin(nowMs / 110f))
+    val c = Palette.Danger.copy(alpha = a)
+    val t = 16f
+    drawRect(c, Offset.Zero, androidx.compose.ui.geometry.Size(size.width, t))
+    drawRect(c, Offset(0f, size.height - t), androidx.compose.ui.geometry.Size(size.width, t))
+    drawRect(c, Offset.Zero, androidx.compose.ui.geometry.Size(t, size.height))
+    drawRect(c, Offset(size.width - t, 0f), androidx.compose.ui.geometry.Size(t, size.height))
 }

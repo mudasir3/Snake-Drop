@@ -1,4 +1,4 @@
-@file:Suppress("MaxLineLength")
+@file:Suppress("MaxLineLength", "MagicNumber", "LongParameterList")
 
 package com.snakedrop.app
 
@@ -42,7 +42,7 @@ private fun Menu(
 ) {
     val mod = if (scroll) Modifier.verticalScroll(rememberScrollState()) else Modifier
     Column(
-        Modifier.fillMaxSize().background(Palette.Ink).statusBarsPadding().then(mod).padding(24.dp),
+        Modifier.fillMaxSize().statusBarsPadding().then(mod).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         ArcadeText(title, 26, Palette.Snake)
@@ -57,12 +57,13 @@ fun HomeScreen(
     onHow: () -> Unit,
 ) {
     Column(
-        Modifier.fillMaxSize().background(Palette.Ink).statusBarsPadding().padding(24.dp),
+        Modifier.fillMaxSize().statusBarsPadding().padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
     ) {
-        ArcadeText("SNAKE", 40, Palette.Snake)
-        ArcadeText("DROP", 40, Palette.Apple)
+        BobbingTitle("SNAKE", 46, Palette.Snake, 0)
+        BobbingTitle("DROP", 46, Palette.Apple, 5)
         ArcadeText("BEST  $best", 14, Palette.TextDim)
+        CrawlingSnake()
         ArcadeButton("PLAY", onClick = onPlay)
         ArcadeButton("HOW TO PLAY", primary = false, onClick = onHow)
     }
@@ -147,11 +148,14 @@ private fun LevelTile(
     onClick: () -> Unit,
 ) {
     val border = if (unlocked) Palette.AccentAlt else Palette.Grid
-    val mod = Modifier.fillMaxWidth().height(96.dp).border(2.dp, border).let { if (unlocked) it.clickable(onClick = onClick) else it }
+    val mod =
+        Modifier.fillMaxWidth().height(96.dp).background(Palette.Panel.copy(alpha = 0.85f)).border(2.dp, border).let {
+            if (unlocked) it.clickable(onClick = onClick) else it
+        }
     Column(mod.padding(8.dp), verticalArrangement = Arrangement.SpaceBetween) {
         ArcadeText("${level.id}", 20, if (unlocked) Palette.TextHi else Palette.TextDim)
         ArcadeText(level.difficulty.name.take(1) + " " + level.goalType.name.take(3) + " " + level.target, 10, Palette.TextDim)
-        ArcadeText(if (unlocked) "*".repeat(stars).padEnd(3, '-') else "LOCK", 12, Palette.Snake)
+        if (unlocked) StarsRow(stars, 14.dp, animate = false) else ArcadeText("LOCK", 12, Palette.TextDim)
     }
 }
 
@@ -161,6 +165,8 @@ fun ResultScreen(
     store: ProfileStore,
     race: RaceBackend,
     hasNextLevel: Boolean,
+    canRevive: Boolean,
+    onRevive: () -> Unit,
     onAgain: () -> Unit,
     onNext: () -> Unit,
     onHome: () -> Unit,
@@ -184,12 +190,13 @@ fun ResultScreen(
         },
         scroll = true,
     ) {
-        ArcadeText("SCORE ${result.score}   BEST ${store.bestScore}", 14)
-        if (result.outcome == Outcome.LEVEL_WON) ArcadeText("*".repeat(result.stars).padEnd(3, '-'), 28, Palette.Snake)
+        ArcadeText("SCORE ${rememberCountUp(result.score)}   BEST ${store.bestScore}", 14)
+        if (result.outcome == Outcome.LEVEL_WON) StarsRow(result.stars, 44.dp)
         if (mode is GameMode.Versus) ArcadeText("BOT ${result.session.opponentScore}", 14, Palette.Apple)
         if (mode is GameMode.Daily) {
             DailyBoard(board, verified, race.isOnline)
         }
+        if (canRevive) ArcadeButton("REVIVE (WATCH AD)", onClick = onRevive)
         if (result.outcome == Outcome.LEVEL_WON && hasNextLevel) ArcadeButton("NEXT LEVEL", onClick = onNext)
         ArcadeButton(
             if (result.outcome == Outcome.LEVEL_WON) "REPLAY" else "AGAIN",

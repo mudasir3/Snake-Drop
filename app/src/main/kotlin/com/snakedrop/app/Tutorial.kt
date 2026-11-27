@@ -5,6 +5,7 @@ package com.snakedrop.app
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,9 +30,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.snakedrop.render.Palette
+import kotlinx.coroutines.delay
 import kotlin.math.abs
+import kotlin.random.Random
 
 private class Page(val title: String, val body: String)
 
@@ -41,6 +45,7 @@ private val pages =
         Page("EVERY 4TH APPLE DROPS YOUR TAIL", "Your last 4 segments break off and fall into the well below, in the same shape."),
         Page("FILL A ROW TO CLEAR IT", "You can't move falling blocks. Bend your tail to aim the drop. A full row disappears."),
         Page("DON'T STACK TOO HIGH", "A tall stack shrinks your arena. Clear rows to get your space back."),
+        Page("NOW YOU TRY", "Swipe on the board to steer. Eat apples. This practice board wraps around and can't hurt you."),
     )
 
 private const val LOOP_MS = 4000L
@@ -56,7 +61,7 @@ fun TutorialScreen(onDone: () -> Unit) {
         while (true) withFrameNanos { timeMs = (it - start) / NANOS_PER_MS_T }
     }
     Column(
-        Modifier.fillMaxSize().background(Palette.Ink).statusBarsPadding().padding(20.dp),
+        Modifier.fillMaxSize().statusBarsPadding().padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -64,13 +69,17 @@ fun TutorialScreen(onDone: () -> Unit) {
                 Box(Modifier.size(width = 28.dp, height = 6.dp).background(if (i == page) Palette.Accent else Palette.Grid))
             }
         }
-        Canvas(Modifier.fillMaxWidth().height(260.dp).background(Palette.Panel)) {
-            val p = (timeMs % LOOP_MS).toFloat() / LOOP_MS
-            when (page) {
-                0 -> sceneSteer(p)
-                1 -> sceneDetach(p)
-                2 -> sceneClear(p)
-                else -> sceneStack(p)
+        if (page == pages.lastIndex) {
+            PracticePad()
+        } else {
+            Canvas(Modifier.fillMaxWidth().height(260.dp).background(Palette.Panel)) {
+                val p = (timeMs % LOOP_MS).toFloat() / LOOP_MS
+                when (page) {
+                    0 -> sceneSteer(p)
+                    1 -> sceneDetach(p)
+                    2 -> sceneClear(p)
+                    else -> sceneStack(p)
+                }
             }
         }
         ArcadeText(pages[page].title, 18, Palette.Snake)
@@ -226,4 +235,76 @@ private fun DrawScope.sceneStack(p: Float) {
     b.dangerLine(danger.coerceAtLeast(arenaBottom))
     for (r in 0 until height) for (c in 0 until COLS) b.sq(8f - r, c.toFloat(), Palette.Chunks[1 + (r + c) % 6], 0.9f)
     for (c in 2..5) b.sq(1f, c.toFloat(), if (c == 5) Palette.SnakeHead else Palette.Snake)
+}
+
+private const val PRACTICE_ROWS = 8
+private const val PRACTICE_START_LEN = 3
+
+/** Free-roam practice board: swipe to steer, wraps at the edges, eating apples never ends the run. */
+@Composable
+private fun PracticePad() {
+    val snake = remember { mutableListOf(3 * COLS + 2, 3 * COLS + 3, 3 * COLS + 4) }
+    val dir = remember { intArrayOf(1) }
+    val apple = remember { intArrayOf(5 * COLS + 9) }
+    var eaten by remember { mutableIntStateOf(0) }
+    var version by remember { mutableIntStateOf(0) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(170)
+            val head = snake.last()
+            var r = head / COLS
+            var c = head % COLS
+            when (dir[0]) {
+                0 -> r = (r + PRACTICE_ROWS - 1) % PRACTICE_ROWS
+                1 -> c = (c + 1) % COLS
+                2 -> r = (r + 1) % PRACTICE_ROWS
+                else -> c = (c + COLS - 1) % COLS
+            }
+            val next = r * COLS + c
+            if (next in snake.drop(1)) {
+                while (snake.size > PRACTICE_START_LEN) snake.removeAt(0)
+            }
+            snake.add(next)
+            if (next == apple[0]) {
+                eaten++
+                var a: Int
+                do a = Random.nextInt(COLS * PRACTICE_ROWS) while (a in snake)
+                apple[0] = a
+            } else {
+                snake.removeAt(0)
+            }
+            version++
+        }
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        ArcadeText("APPLES $eaten", 14, Palette.Snake)
+        Canvas(
+            Modifier.fillMaxWidth().height(260.dp).background(Palette.Panel).pointerInput(Unit) {
+                var dx = 0f
+                var dy = 0f
+                detectDragGestures(onDragStart = {
+                    dx = 0f
+                    dy = 0f
+                }) { change, drag ->
+                    change.consume()
+                    dx += drag.x
+                    dy += drag.y
+                    if (abs(dx) >= 30f || abs(dy) >= 30f) {
+                        val d = if (abs(dx) > abs(dy)) (if (dx > 0) 1 else 3) else (if (dy > 0) 2 else 0)
+                        if (d != (dir[0] + 2) % 4) dir[0] = d
+                        dx = 0f
+                        dy = 0f
+                    }
+                }
+            },
+        ) {
+            version.let { }
+            val b = board(PRACTICE_ROWS)
+            b.grid()
+            b.sq((apple[0] / COLS).toFloat(), (apple[0] % COLS).toFloat(), Palette.Apple)
+            snake.forEachIndexed { i, cell ->
+                b.sq((cell / COLS).toFloat(), (cell % COLS).toFloat(), if (i == snake.lastIndex) Palette.SnakeHead else Palette.Snake)
+            }
+        }
+    }
 }

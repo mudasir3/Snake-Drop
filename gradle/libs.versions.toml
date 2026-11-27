@@ -8,6 +8,7 @@ navigation = "2.9.0"
 datastore = "1.1.7"
 coroutines = "1.10.2"
 coreKtx = "1.16.0"
+playServicesAds = "24.8.0"
 ktlintPlugin = "12.1.2"
 detekt = "1.23.8"
 junit = "4.13.2"
@@ -19,6 +20,7 @@ androidx-lifecycle-runtime = { module = "androidx.lifecycle:lifecycle-runtime-co
 androidx-lifecycle-viewmodel = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
+play-services-ads = { module = "com.google.android.gms:play-services-ads", version.ref = "playServicesAds" }
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
 compose-ui = { module = "androidx.compose.ui:ui" }
 compose-ui-graphics = { module = "androidx.compose.ui:ui-graphics" }

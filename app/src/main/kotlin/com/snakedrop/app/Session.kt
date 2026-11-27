@@ -14,6 +14,7 @@ import com.snakedrop.game.RunSetup
 import com.snakedrop.game.SnakeDropEngine
 
 private const val MS_PER_DAY = 86_400_000L
+private const val FX_CAPACITY = 128
 
 /** What the player chose to play. */
 sealed interface GameMode {
@@ -45,6 +46,25 @@ class Session(val mode: GameMode) {
         }
 
     val run = RecordedRun(setup)
+
+    /** Difficulty used for theming. */
+    val difficulty: Difficulty get() = setup.difficulty
+
+    private val fxTypes = IntArray(FX_CAPACITY)
+    private val fxArgs = IntArray(FX_CAPACITY)
+
+    /** Engine events produced since the UI last called [clearFx]. */
+    var fxCount: Int = 0
+        private set
+
+    fun fxType(i: Int): Int = fxTypes[i]
+
+    fun fxArg(i: Int): Int = fxArgs[i]
+
+    fun clearFx() {
+        fxCount = 0
+    }
+
     val bot: BotOpponent? = (mode as? GameMode.Versus)?.let { BotOpponent(setup.seed, it.difficulty) }
     private val match = bot?.let { MatchController(run.state, it) }
     val state: GameState get() = run.state
@@ -53,6 +73,14 @@ class Session(val mode: GameMode) {
     /** Advances one fixed tick. */
     fun step() {
         if (match != null) match.step() else run.step()
+        val ev = state.events
+        for (i in 0 until ev.count) {
+            if (fxCount < FX_CAPACITY) {
+                fxTypes[fxCount] = ev.type(i)
+                fxArgs[fxCount] = ev.arg(i)
+                fxCount++
+            }
+        }
         state.events.clear()
         bot?.state?.events?.clear()
         val m = mode
